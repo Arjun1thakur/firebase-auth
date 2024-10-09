@@ -1,0 +1,37 @@
+import { auth, storedb } from "@/config/config";
+import {
+  signInWithPopup,
+  TwitterAuthProvider,
+} from "firebase/auth";
+import { setDoc, doc, getDoc } from "firebase/firestore";
+import { toast } from "sonner";
+
+
+ const handleTwitterSignIn = async () => {
+    const provider = new TwitterAuthProvider(); 
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+  
+      const userDoc = await getDoc(doc(storedb, "users", user.uid));
+      if (!userDoc.exists()) {
+        // Create a new user document
+        await setDoc(doc(storedb, "users", user.uid), {
+          email: user.email,
+          uid: user.uid,
+          name: user.displayName,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified || false,
+          phoneNumber: user.phoneNumber || null,
+          providerId: result.providerId,
+          role: "user",
+        });
+      }
+      toast.success(`${user.displayName} signed in successfully`);
+    } catch (err) {
+      // Handle errors
+      toast.error(err.message);
+    }
+  };
+
+  export default handleTwitterSignIn
